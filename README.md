@@ -1,7 +1,7 @@
-1. Change icons for achievement
-2. Change color
-3. Change start page with better images
-4. Add research content
-5. Fix project images
-6. Enter contact info
-7. Deploy
+- [ ] Change icons for achievement
+- [ ] Change color
+- [ ] Change start page with better images
+- [X] Add research content
+- [ ] Fix project images
+- [ ] Enter contact info
+- [ ] Deploy
