@@ -1,6 +1,8 @@
 - [X] Change icons for achievement
-- [ ] Change start page with better images
+- [X] Change start page with better images
 - [X] Add research content
 - [X] Fix project images
-- [ ] Enter contact info
+- [X] Enter contact info
 - [ ] Deploy
+
+Link to the website :  https://saishashetty.github.io/Saisha/
