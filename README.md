@@ -5,4 +5,4 @@
 - [X] Enter contact info
 - [ ] Deploy
 
-Link to the website :  https://saishashetty.github.io/Saisha/
+Link to the website :  www.saishashetty.com
