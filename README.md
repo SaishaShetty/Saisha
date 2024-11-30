@@ -5,5 +5,6 @@
 - [X] Enter contact info
 - [X] Deploy
 - [X] Fix bugs in Work experience
+- [] Add publications section
 
 Link to the website :  www.saishashetty.com
