@@ -2,3 +2,4 @@
 # secrets
 v2/token.md
 v2/spotify-worker/.dev.vars
+v2/spotify-worker/.wrangler/
