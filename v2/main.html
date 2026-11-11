@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>saisha shetty — trustworthy AI for healthcare</title>
+<meta name="description" content="Saisha Shetty — PhD student in Computer Science at UC Davis. Trustworthy AI for healthcare: LLM evaluation, uncertainty calibration, synthetic data.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a0c0b; --bg2:#0d100e;
+    --grn:#7ae792; --grn-dim:#5aa86a; --grn-deep:#3a6b46;
+    --amb:#f0be5a; --ink:#cee0d0; --dim:#5c766a; --dim2:#39493f;
+    --cyan:#78d2e6; --pink:#e68caa; --red:#e6786e;
+    --line:#1a221d;
+    --scan:rgba(0,0,0,.16); --scanop:.5;
+    --vig:rgba(0,0,0,.35);
+    --maxw:1040px;
+  }
+  /* ---- LIGHT (white terminal) ---- */
+  body.light{
+    --bg:#f6f7f4; --bg2:#eef1ec;
+    --grn:#128a3a; --grn-dim:#3a9a57; --grn-deep:#b8e3c3;
+    --amb:#a86100; --ink:#1b2420; --dim:#5f6f66; --dim2:#c4cec7;
+    --cyan:#0a79a0; --pink:#b0468a; --red:#c0392b;
+    --line:#dde3dd;
+    --scan:rgba(0,0,0,.05); --scanop:.6;
+    --vig:rgba(0,0,0,.06);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    background:var(--bg); color:var(--ink);
+    font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    font-size:16px; line-height:1.65; letter-spacing:.2px;
+    -webkit-font-smoothing:antialiased; overflow-x:hidden;
+    transition:background .25s ease,color .25s ease;
+  }
+  /* faint CRT scanlines */
+  body::before{
+    content:''; position:fixed; inset:0; z-index:100; pointer-events:none;
+    background:repeating-linear-gradient(to bottom, rgba(0,0,0,0) 0 2px, var(--scan) 2px 3px);
+    mix-blend-mode:multiply; opacity:var(--scanop);
+  }
+  /* subtle vignette */
+  body::after{
+    content:''; position:fixed; inset:0; z-index:99; pointer-events:none;
+    background:radial-gradient(ellipse 90% 70% at 50% 40%, transparent 60%, var(--vig) 100%);
+  }
+  a{color:inherit;text-decoration:none}
+  ::selection{background:var(--grn-deep);color:var(--bg)}
+
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 28px}
+
+  /* ---------- NAV ---------- */
+  nav{
+    position:fixed;top:0;left:0;right:0;z-index:40;
+    background:color-mix(in srgb, var(--bg) 90%, transparent);
+    backdrop-filter:blur(3px);border-bottom:1px solid transparent;
+  }
+  nav .wrap{display:flex;align-items:center;justify-content:space-between;height:66px;gap:18px}
+  .brand{color:var(--grn);font-weight:700;font-size:15px;letter-spacing:.5px;cursor:pointer;white-space:nowrap}
+  .brand .blink{color:var(--grn)}
+  .navright{display:flex;align-items:center;gap:22px}
+  .navlinks{display:flex;gap:22px}
+  .navlinks a{color:var(--dim);font-size:14px;transition:color .15s;cursor:pointer}
+  .navlinks a:hover,.navlinks a:focus,.navlinks a.active{color:var(--grn)}
+  .navlinks a::before{content:'';color:var(--grn);opacity:0}
+  .navlinks a:hover::before,.navlinks a.active::before{content:'▸ ';opacity:1}
+  .lightbtn{
+    font-family:inherit;font-size:12.5px;cursor:pointer;color:var(--amb);
+    background:transparent;border:1px solid var(--dim2);border-radius:5px;
+    padding:4px 10px;transition:border-color .15s,color .15s;white-space:nowrap;
+  }
+  .lightbtn:hover{border-color:var(--amb)}
+  @media(max-width:760px){.navlinks{display:none}}
+
+  /* ---------- STATUS ---------- */
+  .status{
+    position:fixed;top:80px;right:28px;z-index:30;text-align:right;
+    font-size:12.5px;color:var(--dim);line-height:1.7;pointer-events:none;
+    opacity:0;transition:opacity .5s ease;
+  }
+  .status.show{opacity:1}
+  .status .k{color:var(--grn-dim)}
+  .status .v{color:var(--ink)}
+  .status .np{color:var(--pink)}
+  .status .np.marq{display:inline-block;max-width:280px;overflow:hidden;white-space:nowrap;vertical-align:bottom;
+    -webkit-mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent)}
+  .status .np .mq{display:inline-block;animation:mq var(--mqd,14s) linear infinite}
+  .status .np .mq span{padding-right:3em}
+  @keyframes mq{to{transform:translateX(-50%)}}
+  @media(max-width:900px){.status{display:none}}
+
+  /* ---------- VIEWS ---------- */
+  .view{display:none}
+  .view.show{display:block;animation:viewin .32s ease}
+  @keyframes viewin{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+  /* ---------- HERO ---------- */
+  header{min-height:100svh;display:flex;align-items:center;padding-top:66px}
+  .hero{width:100%}
+  .boot{color:var(--dim);font-size:14.5px;line-height:1.9;min-height:120px;margin-bottom:26px}
+  .boot .ok{color:var(--grn)}
+  .boot .warn{color:var(--amb)}
+  .prompt-lbl{color:var(--dim);font-size:15px}
+  .prompt-lbl .cmd{color:var(--ink)}
+  h1{
+    font-size:clamp(42px,8vw,86px);font-weight:700;color:var(--grn);
+    letter-spacing:1px;line-height:1.05;margin:6px 0 22px;
+  }
+  .tagline{font-size:clamp(15px,2.4vw,21px);color:var(--ink);margin:6px 0}
+  .tagline.amber{color:var(--amb)}
+  .tagline .caret{
+    display:inline-block;width:.6em;height:1.05em;background:var(--amb);
+    vertical-align:-2px;margin-left:2px;animation:blink 1.05s steps(1) infinite;
+  }
+  .hero-cta{margin-top:40px;display:flex;gap:14px;flex-wrap:wrap;align-items:center;
+    opacity:0;animation:fadein .5s ease forwards;animation-delay:3.4s}
+  .hint{color:var(--dim);font-size:14px}
+  .hint b{color:var(--grn);font-weight:400}
+  kbd{
+    font-family:inherit;background:var(--bg2);border:1px solid var(--dim2);
+    border-radius:4px;padding:1px 7px;color:var(--grn);font-size:12.5px
+  }
+  @keyframes blink{0%,50%{opacity:1}51%,100%{opacity:0}}
+  @keyframes fadein{to{opacity:1}}
+
+  /* ---------- SECTIONS ---------- */
+  section{padding:70px 0;border-top:1px solid var(--line)}
+  section.first{border-top:none}
+  .pagehead{padding-top:92px}
+  .backbar{margin-bottom:26px}
+  .backbar a{color:var(--dim);font-size:13.5px;cursor:pointer;border-bottom:1px solid var(--dim2)}
+  .backbar a:hover{color:var(--grn);border-color:var(--grn)}
+  .cmdhead{font-size:15px;margin-bottom:30px}
+  .cmdhead .p{color:var(--dim)}
+  .cmdhead .c{color:var(--grn);font-weight:500}
+  .reveal{opacity:0;transform:translateY(14px);transition:opacity .5s ease,transform .5s ease}
+  .reveal.in{opacity:1;transform:none}
+
+  /* publications */
+  .pub{padding:16px 0;border-bottom:1px dashed var(--line);display:block}
+  .pub:last-child{border-bottom:none}
+  .pubrow{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+  .fname{color:var(--cyan);font-weight:500;font-size:17px;max-width:74%}
+  .pub:hover .fname{text-decoration:underline}
+  .plinks{margin-left:auto;display:flex;gap:12px}
+  .plinks a{color:var(--grn);font-size:13.5px;cursor:pointer}
+  .pdesc{color:var(--ink);font-size:14.5px;margin-top:5px}
+  .pmeta{color:var(--dim);font-size:13px;margin-top:3px}
+  .pmeta .star{color:var(--amb)}
+
+  /* news feed */
+  .newsfeed{border-left:2px solid var(--line)}
+  .nrow{display:flex;align-items:baseline;gap:16px;padding:11px 0 11px 22px;position:relative}
+  .nrow::before{content:'';position:absolute;left:-5px;top:18px;width:8px;height:8px;border-radius:50%;background:var(--dim2)}
+  .nrow .ndate{color:var(--dim2);font-size:13px;min-width:74px;white-space:nowrap}
+  .nrow .nmark{font-size:14px;width:14px;text-align:center}
+  .nmark.star{color:var(--amb)} .nmark.plus{color:var(--grn)} .nmark.arrow{color:var(--cyan)}
+  .nrow .ntext{color:var(--ink);font-size:15px}
+  .nrow .ntext b{color:var(--grn);font-weight:500}
+  .nrow .nhl{color:var(--amb)}
+  .nrow.more{padding-top:6px}
+  .nrow.more::before{display:none}
+  .comment2{color:var(--dim);font-size:13.5px}
+  @media(max-width:560px){.nrow{flex-wrap:wrap;gap:6px 12px}.nrow .ndate{min-width:0}}
+
+  /* projects grid */
+  .projgroup{color:var(--amb);font-size:14px;margin:26px 0 12px;letter-spacing:.3px}
+  .projgroup:first-child{margin-top:0}
+  .projgroup::before{content:'▾ ';color:var(--grn-dim)}
+  .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+  @media(max-width:620px){.grid{grid-template-columns:1fr}}
+  .card{
+    border:1px solid var(--line);border-radius:8px;padding:18px 18px 20px;
+    background:linear-gradient(180deg,var(--bg2),transparent);transition:border-color .18s,transform .18s
+  }
+  .card:hover{border-color:var(--grn-deep);transform:translateY(-3px)}
+  .card .ct{color:var(--grn);font-weight:500;font-size:16px}
+  .card .ct::before{content:'▸ ';color:var(--grn-dim)}
+  .card .cd{color:var(--dim);font-size:13px;margin-top:8px;line-height:1.55}
+  .card .cl{margin-top:14px;display:flex;gap:12px}
+  .card .cl a{color:var(--dim);font-size:12.5px;border-bottom:1px solid var(--dim2);cursor:pointer}
+  .card .cl a:hover{color:var(--grn);border-color:var(--grn)}
+
+  /* experience */
+  .expitem{padding:15px 0;border-bottom:1px dashed var(--line)}
+  .expitem:last-child{border-bottom:none}
+  .exprow{display:flex;align-items:baseline;gap:14px}
+  .exprow .dot{color:var(--amb)}
+  .exprow .role{color:var(--ink);font-size:16px}
+  .exprow .role b{color:var(--grn);font-weight:500}
+  .exprow .tag{color:var(--dim2);font-size:12px;border:1px solid var(--dim2);border-radius:4px;padding:0 7px}
+  .exprow .span{margin-left:auto;color:var(--dim);font-size:13.5px;white-space:nowrap}
+  .expdesc{color:var(--dim);font-size:13.5px;margin:5px 0 0 28px;line-height:1.55;max-width:72ch}
+  .expdesc b{color:var(--grn-dim);font-weight:500}
+  .commit{color:var(--dim2);font-size:12.5px;font-family:inherit}
+
+  /* about */
+  .about p{max-width:70ch;margin:0 0 14px;font-size:15.5px}
+  .about .hl{color:var(--amb)}
+  .about .comment{color:var(--dim);font-size:14.5px;display:block;margin:2px 0}
+  .about .comment::before{content:'// '}
+  .about .ilink{color:var(--cyan);border-bottom:1px solid var(--dim2)}
+  .about .ilink:hover{border-color:var(--grn)}
+
+  /* contact */
+  .clinks{display:flex;flex-wrap:wrap;gap:12px 30px;margin-top:6px}
+  .clinks a{color:var(--cyan);font-size:15.5px}
+  .clinks a:hover{text-decoration:underline}
+  .advisor{color:var(--dim);font-size:13.5px;margin-top:22px}
+  .advisor a{color:var(--dim);border-bottom:1px solid var(--dim2)}
+  .advisor a:hover{color:var(--grn);border-color:var(--grn)}
+
+  footer{padding:44px 0 90px;border-top:1px solid var(--line);color:var(--dim);font-size:13px}
+  footer .l{color:var(--grn-dim)}
+
+  /* ---------- CONSOLE ---------- */
+  #consoleBar{
+    position:fixed;left:0;right:0;bottom:0;z-index:60;
+    background:color-mix(in srgb, var(--bg) 97%, transparent);
+    border-top:1px solid var(--line);
+    backdrop-filter:blur(6px);transform:translateY(calc(100% - 42px));
+    transition:transform .28s ease
+  }
+  #consoleBar.open{transform:translateY(0)}
+  .console-tab{
+    height:42px;display:flex;align-items:center;gap:10px;cursor:pointer;
+    padding:0 28px;color:var(--dim);font-size:13px;user-select:none
+  }
+  .console-tab .g{color:var(--grn)}
+  .console-tab:hover{color:var(--ink)}
+  .console-body{max-width:var(--maxw);margin:0 auto;padding:6px 28px 18px}
+  .console-out{max-height:40vh;overflow-y:auto;font-size:14px;line-height:1.7;padding:8px 0}
+  .console-out .line{white-space:pre-wrap;word-break:break-word}
+  .console-out .u{color:var(--grn)}
+  .console-out .muted{color:var(--dim)}
+  .console-out .amb{color:var(--amb)}
+  .console-out .cy{color:var(--cyan)}
+  .console-out .pk{color:var(--pink)}
+  .console-inputline{display:flex;align-items:center;gap:8px;padding-top:8px;border-top:1px solid var(--line)}
+  .console-inputline .ps{color:var(--grn);font-size:14px;white-space:nowrap}
+  #consoleInput{
+    flex:1;background:transparent;border:none;outline:none;color:var(--ink);
+    font-family:inherit;font-size:14px;caret-color:var(--grn)
+  }
+  .console-out::-webkit-scrollbar{width:8px}
+  .console-out::-webkit-scrollbar-thumb{background:var(--dim2);border-radius:4px}
+
+  /* featured project panels + ascii metric bars */
+  .pfeat{border:1px solid var(--dim2);border-radius:9px;overflow:hidden;margin-bottom:16px;
+    background:linear-gradient(180deg,var(--bg2),transparent);transition:border-color .18s,transform .18s}
+  .pfeat:hover{border-color:var(--grn-deep);transform:translateY(-2px)}
+  .pfeat-h{display:flex;justify-content:space-between;align-items:center;gap:12px;
+    padding:11px 18px;border-bottom:1px solid var(--line);
+    background:color-mix(in srgb,var(--grn) 8%, transparent)}
+  .pfeat-h .nm{color:var(--grn);font-weight:700;font-size:16px}
+  .pfeat-h .nm::before{content:'[ ';color:var(--grn-dim)}
+  .pfeat-h .nm::after{content:' ]';color:var(--grn-dim)}
+  .pfeat-h .tg{color:var(--amb);font-size:12px;border:1px solid var(--dim2);border-radius:4px;padding:1px 9px;white-space:nowrap}
+  .pfeat-b{padding:15px 18px 17px}
+  .pfeat-b .pdescr{color:var(--ink);font-size:14.5px;margin-bottom:14px;max-width:66ch}
+  .bar{display:grid;grid-template-columns:82px 1fr auto;align-items:center;gap:12px;margin:5px 0;font-size:13.5px}
+  .bar .bl{color:var(--dim)}
+  .bar .track{white-space:nowrap;overflow:hidden;font-size:13px;letter-spacing:-.5px}
+  .bar .track .on{color:var(--grn)}
+  .bar .track .off{color:var(--dim2)}
+  .bar .vl{color:var(--amb)}
+  .pfeat-b .flinks{margin-top:15px;display:flex;gap:18px}
+  .pfeat-b .flinks a{color:var(--grn-dim);font-size:13.5px;border-bottom:1px solid var(--dim2);cursor:pointer}
+  .pfeat-b .flinks a::before{content:'› '}
+  .pfeat-b .flinks a:hover{color:var(--grn);border-color:var(--grn)}
+  .plist .prow{display:flex;align-items:baseline;gap:14px;padding:11px 0;border-bottom:1px dashed var(--line)}
+  .plist .prow:last-child{border-bottom:none}
+  .plist .prow .nm{color:var(--grn);font-size:15px;min-width:166px;white-space:nowrap}
+  .plist .prow .nm::before{content:'▸ ';color:var(--grn-dim)}
+  .plist .prow .ds{color:var(--dim);font-size:13.5px}
+  .plist .prow .lk{margin-left:auto;display:flex;gap:12px}
+  .plist .prow .lk a{color:var(--dim);font-size:12.5px;border-bottom:1px solid var(--dim2);cursor:pointer}
+  .plist .prow .lk a:hover{color:var(--grn);border-color:var(--grn)}
+  @media(max-width:620px){.plist .prow{flex-wrap:wrap;gap:4px 12px}.plist .prow .nm{min-width:0}.plist .prow .lk{margin-left:0}}
+  /* health research-map (themes graph) */
+  .hmap{border:1px solid var(--line);border-radius:8px;padding:16px 20px;margin-bottom:20px;
+    background:linear-gradient(180deg,var(--bg2),transparent)}
+  .hmap-root{color:var(--grn);font-weight:700;font-size:14.5px;margin-bottom:9px}
+  .hmap-root::before{content:'◇ ';color:var(--grn-dim)}
+  .hrow{display:flex;align-items:baseline;padding:3px 0;font-size:13.5px}
+  .hrow .br{color:var(--dim2);white-space:pre;margin-right:12px}
+  .hrow .th{color:var(--cyan);white-space:nowrap}
+  .hrow .dd{flex:1 1 16px;border-bottom:1px dotted var(--dim2);margin:0 10px;min-width:14px;transform:translateY(-4px)}
+  .hrow .de{color:var(--dim);white-space:nowrap;text-align:right}
+  .hsub{color:var(--dim);font-size:13px;margin:2px 0 13px}
+  @media(max-width:620px){.hrow{flex-wrap:wrap}.hrow .dd{display:none}.hrow .de{flex-basis:100%;margin-left:28px;text-align:left}}
+  [data-date]{color:var(--amb)!important;font-weight:500}
+  /* terminal block cursor */
+  @media (pointer:fine){ html.tcur, html.tcur *{ cursor:none !important; } }
+  #termcur{
+    position:fixed; left:0; top:0; z-index:200; pointer-events:none;
+    width:9px; height:17px; transform:translate3d(-100px,-100px,0);
+    background:var(--grn); border-radius:1px; opacity:.9;
+    box-shadow:0 0 6px rgba(122,231,146,.4);
+    will-change:transform;
+  }
+  #termcur.idle{ animation:curblink 1.1s steps(1) infinite; }
+  #termcur.press{ background:var(--amb); box-shadow:0 0 8px rgba(240,190,90,.55); }
+  #termcur.hide{ opacity:0 !important; animation:none; }
+  @keyframes curblink{0%,55%{opacity:.9}56%,100%{opacity:.15}}
+  @media (prefers-reduced-motion:reduce){ #termcur.idle{animation:none} }
+  .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap">
+    <a class="brand" data-go="home">~/saisha <span class="blink">▸</span></a>
+    <div class="navright">
+      <div class="navlinks">
+        <a data-go="home" data-scroll="about">about</a>
+        <a data-go="news">news</a>
+        <a data-go="publications">publications</a>
+        <a data-go="projects">projects</a>
+        <a data-go="experience">experience</a>
+        <a data-go="cv">cv</a>
+        <a data-go="home" data-scroll="contact">contact</a>
+      </div>
+      <button id="lightBtn" class="lightbtn" aria-label="toggle light mode">☀ light</button>
+    </div>
+  </div>
+</nav>
+
+<div class="status" aria-hidden="true">
+  <div><span class="k">status:</span> <span class="v" id="stStatus">debugging eval harness</span></div>
+  <div><span class="k">now playing:</span> <span class="np" id="stNP">♪</span></div>
+  <div><span class="k">local:</span> <span class="v" id="stClock">--:--</span> · Davis, CA</div>
+</div>
+
+<main>
+
+<!-- ============ HOME: whoami + about + contact ============ -->
+<div class="view show" id="view-home">
+  <header id="top">
+    <div class="wrap hero">
+      <div class="boot" id="boot" aria-hidden="true"></div>
+      <div id="heroMain" style="opacity:0">
+        <div class="prompt-lbl">$ <span class="cmd">whoami</span></div>
+        <h1>saisha_shetty</h1>
+        <div class="tagline">&gt; PhD student @ UC Davis · trustworthy AI for healthcare</div>
+        <div class="tagline amber">&gt; <span id="typed"></span><span class="caret" id="caret"></span></div>
+        <div class="hero-cta">
+          <span class="hint">type <kbd>help</kbd> or a section name · press <kbd>enter</kbd> for console · or scroll ↓</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <section id="about" class="first">
+    <div class="wrap">
+      <div class="cmdhead reveal"><span class="p">$ </span><span class="c">cat about.md</span></div>
+      <div class="about reveal">
+        <p><span style="color:var(--grn)">## whoami</span></p>
+        <p>I build clinical AI that <span class="hl">knows when it doesn't know</span>. I'm a PhD student in Computer Science at UC&nbsp;Davis, working on trustworthy AI for healthcare — LLM evaluation, uncertainty calibration, and synthetic data.</p>
+        <p>I do this research with <a href="https://www.cs.ucdavis.edu/~filkov/" target="_blank" rel="noopener" class="ilink">Prof.&nbsp;Vladimir&nbsp;Filkov</a> in the <a href="https://ai4h.cs.ucdavis.edu/" target="_blank" rel="noopener" class="ilink">AI for Health Initiative (AI4H)</a>, where I lead <span class="hl">RadAnnotate</span> — an LLM-powered framework for reliable radiology report annotation, combining entity-specific models, synthetic data, and confidence-based selective automation.</p>
+        <p><span class="comment">I care less about topping a benchmark and more about a model not confidently lying to a doctor at 2&nbsp;a.m.</span></p>
+        <p style="color:var(--dim);font-size:14px;margin-top:22px">// everything else is a command — try <span style="color:var(--cyan)">publications</span>, <span style="color:var(--cyan)">projects</span>, <span style="color:var(--cyan)">experience</span>, <span style="color:var(--cyan)">news</span>, or <span style="color:var(--cyan)">cv</span>.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="contact">
+    <div class="wrap">
+      <div class="cmdhead reveal"><span class="p">$ </span><span class="c">contact --all</span></div>
+      <div class="reveal">
+        <div class="clinks">
+          <a href="mailto:spshetty@ucdavis.edu">spshetty@ucdavis.edu</a>
+          <a href="https://github.com/SaishaShetty" target="_blank" rel="noopener">github/SaishaShetty</a>
+          <a href="https://www.linkedin.com/in/saisha-shetty" target="_blank" rel="noopener">linkedin/saisha-shetty</a>
+          <a href="https://scholar.google.com/citations?user=tj7MonsAAAAJ&hl=en" target="_blank" rel="noopener">google scholar</a>
+        </div>
+        <div class="advisor">
+          <span class="commit">// advised by</span>
+          <a href="https://www.cs.ucdavis.edu/~filkov/" target="_blank" rel="noopener">Prof. Vladimir Filkov</a>
+          ·
+          <a href="https://ai4h.cs.ucdavis.edu/" target="_blank" rel="noopener">AI for Health Initiative (AI4H)</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="wrap">
+      <span class="l">saisha@portfolio</span>:~$ echo "thanks for scrolling — type <b style="color:var(--grn);font-weight:400">help</b> to explore."
+    </div>
+  </footer>
+</div>
+
+<!-- ============ NEWS ============ -->
+<div class="view" id="view-news">
+  <section class="first pagehead">
+    <div class="wrap">
+      <div class="backbar"><a data-go="home">← cd ~ (home)</a></div>
+      <div class="cmdhead reveal"><span class="p">$ </span><span class="c">git log --recent</span> <span class="p"># latest news</span></div>
+      <div class="reveal newsfeed">
+        <div class="nrow"><span class="ndate">2026 · 12</span><span class="nmark star">★</span><span class="ntext">First-author poster accepted at <b>RSNA&nbsp;2026</b>, Chicago. <span class="comment2">— Structured Multi-Agent Clinical Reasoning with Automatic Task Decomposition.</span></span></div>
+        <div class="nrow"><span class="ndate" data-date>2026</span><span class="nmark star">★</span><span class="ntext"><b>RadAnnotate</b> accepted to the <span class="nhl">AMIA 2026 Amplify Informatics Conference</span>.</span></div>
+        <div class="nrow"><span class="ndate">2026 · 10</span><span class="nmark star">★</span><span class="ntext">First-author poster accepted at <b>CAIMI26</b> (SIIM · UPenn). <span class="comment2">— Multi-Agent Reasoning Enhances Local Small-Model Performance in Medicine.</span></span></div>
+        <div class="nrow"><span class="ndate">2026 · 10</span><span class="nmark plus">+</span><span class="ntext">Reviewed for the <b>AMIA 2027 Amplify Informatics Conference</b>.</span></div>
+        <div class="nrow"><span class="ndate">2026 · 09</span><span class="nmark plus">+</span><span class="ntext">Reviewed for <b>ML4H 2026</b> (AHLI symposium).</span></div>
+        <div class="nrow"><span class="ndate">2025 · 07</span><span class="nmark plus">+</span><span class="ntext">Joined <b>ELTA&nbsp;AI</b> as an AI Engineer.</span></div>
+        <div class="nrow"><span class="ndate">2025 · 03</span><span class="nmark star">★</span><span class="ntext">Honored by UC&nbsp;Davis as an <span class="nhl">Exceptional Woman in Computer Science</span>.</span></div>
+        <div class="nrow"><span class="ndate">2024 · 04</span><span class="nmark plus">+</span><span class="ntext">Started as a <b>Graduate Student Researcher</b> with Prof.&nbsp;Filkov / AI4H @ UC&nbsp;Davis.</span></div>
+        <div class="nrow more"><span class="ndate"></span><span class="nmark"></span><span class="ntext"><span class="comment2">// this feed is hand-committed. more history lives in the CV.</span></span></div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ============ PUBLICATIONS ============ -->
+<div class="view" id="view-publications">
+  <section class="first pagehead">
+    <div class="wrap">
+      <div class="backbar"><a data-go="home">← cd ~ (home)</a></div>
+      <div class="cmdhead reveal"><span class="p">$ </span><span class="c">ls -l publications/</span></div>
+      <div class="reveal">
+        <div class="projgroup">papers/</div>
+        <div class="pub">
+          <div class="pubrow">
+            <a class="fname" href="https://arxiv.org/abs/2608.13476" target="_blank" rel="noopener">MARC v1: An Open-Source Multi-Agent Framework for Clinical AI Reasoning and Coordination</a>
+            <span class="plinks"><a href="https://arxiv.org/abs/2608.13476" target="_blank" rel="noopener">[paper]</a><a href="https://github.com/Penn-RAIL/MARC-v1" target="_blank" rel="noopener">[code]</a></span>
+          </div>
+          <div class="pdesc">An open-source multi-agent framework that coordinates specialized agents to decompose and reason through clinical tasks, lifting small, locally-run models in medicine.</div>
+          <div class="pmeta"><span class="star">★</span> arXiv preprint · 2026 · co-first author</div>
+        </div>
+        <div class="pub">
+          <div class="pubrow">
+            <a class="fname" href="https://arxiv.org/abs/2603.16002" target="_blank" rel="noopener">RadAnnotate: Large Language Models for Efficient and Reliable Radiology Report Annotation</a>
+            <span class="plinks"><a href="https://arxiv.org/abs/2603.16002" target="_blank" rel="noopener">[paper]</a></span>
+          </div>
+          <div class="pdesc">Reliable annotation of radiology reports using entity-specific models, RAG-based synthetic data, and confidence-based selective automation. F1&nbsp;0.89, with ~67% of reports automated at expert-level precision.</div>
+          <div class="pmeta"><span class="star">★</span> AMIA&nbsp;2026 Amplify Informatics Conference · accepted</div>
+        </div>
+        <div class="pub">
+          <div class="pubrow">
+            <a class="fname" href="https://scholar.google.com/scholar?q=Deep+Learning+Based+Fine-Tuned+Unet+for+Polyp+Segmentation" target="_blank" rel="noopener">Deep Learning Based Fine-Tuned U-Net for Polyp Segmentation</a>
+            <span class="plinks"><a href="https://scholar.google.com/scholar?q=Deep+Learning+Based+Fine-Tuned+Unet+for+Polyp+Segmentation" target="_blank" rel="noopener">[paper]</a></span>
+          </div>
+          <div class="pdesc">A fine-tuned U-Net for segmenting polyps in colonoscopy imagery. 96.8% accuracy and Dice&nbsp;0.76.</div>
+          <div class="pmeta">IEEE&nbsp;CONECCT&nbsp;2024</div>
+        </div>
+        <div class="pub">
+          <div class="pubrow">
+            <a class="fname" href="https://scholar.google.com/scholar?q=Automated+Identification+of+Make+and+Model+of+Total+Wrist+Replacement+Implants+using+Deep+Learning" target="_blank" rel="noopener">Automated Identification of Make and Model of Total Wrist Replacement Implants using Deep Learning</a>
+            <span class="plinks"><a href="https://scholar.google.com/scholar?q=Automated+Identification+of+Make+and+Model+of+Total+Wrist+Replacement+Implants+using+Deep+Learning" target="_blank" rel="noopener">[paper]</a></span>
+          </div>
+          <div class="pdesc">A transfer-learning pipeline (ResNet50V2) that identifies wrist implant make/model from radiographs to support pre-operative planning. 95.1% accuracy, AUC&nbsp;0.9959.</div>
+          <div class="pmeta">EECSS&nbsp;2023</div>
+        </div>
+        <div class="projgroup" style="margin-top:34px">posters &amp; abstracts/</div>
+        <div class="pub">
+          <div class="pubrow">
+            <a class="fname" href="https://github.com/Penn-RAIL/MARC-v1" target="_blank" rel="noopener">Structured Multi-Agent Clinical Reasoning with Automatic Task Decomposition and Pipeline Generation</a>
+            <span class="plinks"><a href="https://github.com/Penn-RAIL/MARC-v1" target="_blank" rel="noopener">[code]</a><span>[poster]</span></span>
+          </div>
+          <div class="pdesc">A multi-agent system that decomposes a clinical question into sub-tasks and generates its own reasoning pipeline.</div>
+          <div class="pmeta">RSNA&nbsp;2026 · Chicago · scientific poster</div>
+        </div>
+        <div class="pub">
+          <div class="pubrow">
+            <a class="fname" href="https://github.com/Penn-RAIL/MARC-v1" target="_blank" rel="noopener">Multi-Agent Reasoning Enhances Local Small-Model Performance in Medicine</a>
+            <span class="plinks"><a href="https://github.com/Penn-RAIL/MARC-v1" target="_blank" rel="noopener">[code]</a><span>[abstract]</span></span>
+          </div>
+          <div class="pdesc">Multi-agent reasoning that lifts small, locally-run models on medical tasks. Abstract to appear in the <i>JIIM</i> supplement (Springer Nature).</div>
+          <div class="pmeta"><span class="star">★</span> CAIMI26 · SIIM Conference on AI in Medical Imaging, UPenn · poster</div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ============ PROJECTS ============ -->
+<div class="view" id="view-projects">
+  <section class="first pagehead">
+    <div class="wrap">
+      <div class="backbar"><a data-go="home">← cd ~ (home)</a></div>
+      <div class="cmdhead reveal"><span class="p">$ </span><span class="c">./projects --featured health</span></div>
+      <div class="reveal">
+        <div class="projgroup">health/</div>
+        <div class="pfeat">
+          <div class="pfeat-h"><span class="nm">MARC-v1</span><span class="tg">multi-agent clinical reasoning</span></div>
+          <div class="pfeat-b">
+            <div class="pdescr">Multi-agent system that decomposes a clinical question into sub-tasks and builds its own reasoning pipeline, lifting small, locally-run models on medical tasks — the work behind the RSNA&nbsp;2026 &amp; CAIMI26 posters.</div>
+            <div class="flinks"><a href="https://arxiv.org/abs/2608.13476" target="_blank" rel="noopener">paper</a><a href="https://github.com/Penn-RAIL/MARC-v1" target="_blank" rel="noopener">code</a></div>
+          </div>
+        </div>
+
+        <div class="pfeat">
+          <div class="pfeat-h"><span class="nm">RadAnnotate</span><span class="tg">clinical LLM · radiology</span></div>
+          <div class="pfeat-b">
+            <div class="pdescr">Auto-annotates radiology reports with entity models + calibrated confidence — F1&nbsp;0.89, 67% safely automated — so experts only review what actually needs a human.</div>
+            <div class="flinks"><a href="https://arxiv.org/abs/2603.16002" target="_blank" rel="noopener">paper</a></div>
+          </div>
+        </div>
+
+        <div class="pfeat">
+          <div class="pfeat-h"><span class="nm">SegRetino</span><span class="tg">medical imaging · segmentation</span></div>
+          <div class="pfeat-b">
+            <div class="pdescr">U-Net for retinal image segmentation with pixel-level accuracy to support faster diagnosis, using augmentation + post-processing to generalize across scans.</div>
+          </div>
+        </div>
+
+        <div class="projgroup" style="margin-top:30px">other/</div>
+        <div class="plist">
+          <div class="prow"><span class="nm">MARS</span><span class="ds">multi-agent peer review — beats o3-mini &amp; NotebookLM on ICLR, runs locally via Ollama</span><span class="lk"><a href="https://github.com/SaishaShetty" target="_blank" rel="noopener">code</a></span></div>
+          <div class="prow"><span class="nm">Toxicity Engagement</span><span class="ds">toxicity ↔ developer engagement across OSS — −76% correlation in FAANG repos</span><span class="lk"><a href="https://github.com/SaishaShetty" target="_blank" rel="noopener">code</a></span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ============ EXPERIENCE ============ -->
+<div class="view" id="view-experience">
+  <section class="first pagehead">
+    <div class="wrap">
+      <div class="backbar"><a data-go="home">← cd ~ (home)</a></div>
+      <div class="cmdhead reveal"><span class="p">$ </span><span class="c">git log --oneline --experience</span></div>
+      <div class="reveal">
+        <div class="expitem">
+          <div class="exprow"><span class="dot">●</span><span class="role"><b>Graduate Student Researcher</b> — UC&nbsp;Davis · AI4H</span><span class="span">Apr 2024 — now</span></div>
+          <div class="expdesc">Lead <b>RadAnnotate</b>: RAG-enhanced synthetic data + multi-model consensus scoring for radiology reports — F1&nbsp;0.89 while safely automating 67% of cases. Calibrate model confidence with isotonic regression (Brier&nbsp;↓ up to 0.13).</div>
+        </div>
+        <div class="expitem">
+          <div class="exprow"><span class="dot">●</span><span class="role"><b>NLP / LLM Data Scientist Intern</b> — Dandelion&nbsp;Health</span><span class="span">Jul — Sep 2026</span></div>
+          <div class="expdesc">Built an end-to-end NLP pipeline to extract inflammatory bowel disease complications from ~150K radiology reports — SQL-based candidate retrieval, LLM structured extraction, and human-in-the-loop validation.</div>
+        </div>
+        <div class="expitem">
+          <div class="exprow"><span class="dot">●</span><span class="role"><b>AI Engineer</b> — ELTA&nbsp;AI</span><span class="span">Jul — Sep 2025</span></div>
+          <div class="expdesc">Built an LLM-driven travel-risk system (Google MCP + DynamoDB) giving real-time 0–100 safety scores at 95% accuracy, plus a Guardrails + regex sanitization layer that cut unsafe text by 80% in production.</div>
+        </div>
+        <div class="expitem">
+          <div class="exprow"><span class="dot">●</span><span class="role"><b>Machine Learning Engineer</b> — Sentry&nbsp;AI</span><span class="span">2021 · 2023</span></div>
+          <div class="expdesc">Improved small-object detection by 40% with slice-aided inference for real-time surveillance; built ResNet152 + Detectron2 pipelines for vehicle &amp; license-plate recognition and lifted false-alert precision by 25%.</div>
+        </div>
+        <div class="expitem">
+          <div class="exprow"><span class="dot">●</span><span class="role"><b>Head Teaching Assistant</b> — UC&nbsp;Davis · ECS&nbsp;154A</span><span class="span">2023 — 2024</span></div>
+          <div class="expdesc">Led the TA team for Computer Architecture — ran discussion sections, office hours, and grading (also TA'd ECS&nbsp;36B, C++ / OOP).</div>
+        </div>
+        <div style="margin-top:14px"><span class="commit">// earlier roles — MLPal, UVic Energy-in-Cities, SRM Biotech — live in the CV.</span></div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ============ CV ============ -->
+<div class="view" id="view-cv">
+  <section class="first pagehead">
+    <div class="wrap">
+      <div class="backbar"><a data-go="home">← cd ~ (home)</a></div>
+      <div class="cmdhead reveal"><span class="p">$ </span><span class="c">open cv.pdf</span></div>
+      <div class="reveal">
+        <p style="font-size:15.5px">The complete record — education, publications, awards, service.
+          <a href="Saisha_Shetty_CV.pdf" target="_blank" rel="noopener" style="color:var(--grn);border-bottom:1px solid var(--grn-deep);margin-left:8px">↳ download cv.pdf</a>
+        </p>
+      </div>
+    </div>
+  </section>
+</div>
+
+</main>
+
+<!-- ---------- CONSOLE ---------- -->
+<div id="consoleBar" aria-label="Interactive console">
+  <div class="console-tab" id="consoleTab">
+    <span class="g">▸</span> <span>console</span> <span style="color:var(--dim2)">— click or press</span> <kbd>enter</kbd> <span style="color:var(--dim2)">· type</span> <span class="g">help</span>
+  </div>
+  <div class="console-body">
+    <div class="console-out" id="consoleOut"></div>
+    <div class="console-inputline">
+      <span class="ps">saisha@portfolio:~$</span>
+      <input id="consoleInput" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="console input">
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============ ROUTER ============ */
+const VIEWS=['home','news','publications','projects','experience','cv'];
+function revealIn(name){
+  const root=document.getElementById('view-'+name); if(!root) return;
+  root.querySelectorAll('.reveal').forEach(e=>e.classList.add('in'));
+}
+function showView(name, scrollId){
+  if(VIEWS.indexOf(name)<0) name='home';
+  VIEWS.forEach(v=>{
+    const el=document.getElementById('view-'+v);
+    if(el) el.classList.toggle('show', v===name);
+  });
+  // nav active state
+  document.querySelectorAll('.navlinks a').forEach(a=>{
+    a.classList.toggle('active', a.getAttribute('data-go')===name && !a.getAttribute('data-scroll'));
+  });
+  window.scrollTo({top:0,behavior:'auto'});
+  revealIn(name);
+  if(scrollId){
+    const t=document.getElementById(scrollId);
+    if(t) setTimeout(()=>t.scrollIntoView({behavior:'smooth'}),60);
+  }
+}
+// nav + any [data-go] click
+document.addEventListener('click',(e)=>{
+  const el=e.target.closest('[data-go]');
+  if(!el) return;
+  e.preventDefault();
+  showView(el.getAttribute('data-go'), el.getAttribute('data-scroll'));
+});
+
+/* ============ LIGHT / DARK TOGGLE ============ */
+(function(){
+  const btn=document.getElementById('lightBtn');
+  function apply(light){
+    document.body.classList.toggle('light', light);
+    btn.textContent = light ? '☾ dark' : '☀ light';
+    try{ localStorage.setItem('saisha-term-theme', light?'light':'dark'); }catch(e){}
+  }
+  let saved=null; try{ saved=localStorage.getItem('saisha-term-theme'); }catch(e){}
+  apply(saved==='light');
+  btn.addEventListener('click',()=>apply(!document.body.classList.contains('light')));
+  window.__toggleTheme=()=>apply(!document.body.classList.contains('light'));
+})();
+
+/* ============ TERMINAL BLOCK CURSOR ============ */
+(function(){
+  if(!matchMedia('(pointer:fine)').matches) return;
+  var el=document.createElement('div'); el.id='termcur';
+  document.body.appendChild(el);
+  document.documentElement.classList.add('tcur');
+  var idleT;
+  addEventListener('mousemove',function(e){
+    el.classList.remove('hide'); el.classList.remove('idle');   // solid while moving
+    el.style.transform='translate3d('+(e.clientX-4)+'px,'+(e.clientY-8)+'px,0)';
+    clearTimeout(idleT);
+    idleT=setTimeout(function(){ el.classList.add('idle'); }, 700);  // blink only when idle
+  },{passive:true});
+  addEventListener('mousedown',function(){ el.classList.add('press'); },{passive:true});
+  addEventListener('mouseup',function(){ el.classList.remove('press'); },{passive:true});
+  document.addEventListener('mouseleave',function(){ el.classList.add('hide'); });
+})();
+
+/* ============ HERO BOOT + TYPING ============ */
+(function(){
+  const bootEl = document.getElementById('boot');
+  const heroMain = document.getElementById('heroMain');
+  const typedEl = document.getElementById('typed');
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const bootLines = [
+    ['booting saisha.exe ...', 'muted'],
+    ['loading trustworthy_ai.module', 'ok'],
+    ['mounting /publications /projects /experience', 'ok'],
+    ['calibrating uncertainty ... [ok]', 'ok'],
+    ['coffee.service ................. [warn: not found]', 'warn'],
+    ['ready.', 'ok'],
+  ];
+  const TAG = "building clinical AI that knows when it doesn't know_";
+  function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;');}
+  function typeTag(i){
+    if(i>TAG.length){ return; }
+    typedEl.textContent = TAG.slice(0,i);
+    setTimeout(()=>typeTag(i+1), 26 + (Math.random()*30));
+  }
+  function showHero(){
+    heroMain.style.transition='opacity .5s ease';
+    heroMain.style.opacity='1';
+    if(reduce){ typedEl.textContent = TAG; return; }
+    setTimeout(()=>typeTag(0), 350);
+  }
+  if(reduce){
+    bootEl.style.display='none'; showHero(); revealIn('home');
+  } else {
+    let li=0;
+    (function nextBoot(){
+      if(li>=bootLines.length){
+        setTimeout(()=>{ bootEl.style.transition='opacity .4s'; bootEl.style.opacity='.0'; }, 260);
+        setTimeout(()=>{ bootEl.style.display='none'; showHero(); }, 640);
+        return;
+      }
+      const [txt,cls]=bootLines[li];
+      const div=document.createElement('div');
+      div.innerHTML='<span class="'+cls+'">> '+esc(txt)+'</span>';
+      bootEl.appendChild(div);
+      li++;
+      setTimeout(nextBoot, 190+Math.random()*120);
+    })();
+  }
+  // reveal home sections once hero settles
+  setTimeout(()=>revealIn('home'), reduce?0:2600);
+})();
+
+/* ============ STATUS CLOCK ============ */
+(function(){
+  const el=document.getElementById('stClock');
+  if(!el) return;
+  function tick(){
+    try{
+      const t=new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:false,timeZone:'America/Los_Angeles'});
+      el.textContent=t;
+    }catch(e){ el.textContent=new Date().toLocaleTimeString(); }
+  }
+  tick(); setInterval(tick,15000);
+})();
+
+/* ============ STATUS: rotating now-playing + hero-only visibility ============ */
+(function(){
+  const status=document.querySelector('.status');
+  const np=document.getElementById('stNP');
+  const TRACKS=[
+    "lo-fi beats to calibrate LLMs to ♪",
+    "Tame Impala — Let It Happen ♪",
+    "Bon Iver — Holocene ♪",
+    "SZA — Good Days ♪",
+    "Arctic Monkeys — 505 ♪",
+    "The Weeknd — Out of Time ♪",
+    "Frank Ocean — Pink + White ♪",
+    "deep focus / brown noise ♪"
+  ];
+  let i=Math.floor(Math.random()*TRACKS.length);
+  function rot(){ if(np){ np.style.opacity='0';
+    setTimeout(()=>{ i=(i+1)%TRACKS.length; np.textContent=TRACKS[i]; np.style.opacity='1'; },300);} }
+  // Set to your deployed worker URL (see spotify-worker/get-refresh-token.md).
+  // Left empty, the widget keeps rotating the fallback list above.
+  const SPOTIFY_API='https://spotify-last-played.saisha-site.workers.dev';
+  let rotTimer=null;
+  if(np){ np.textContent=TRACKS[i]; np.style.transition='opacity .3s'; rotTimer=setInterval(rot,4200); }
+  if(np && SPOTIFY_API){
+    fetch(SPOTIFY_API).then(r=>r.json()).then(d=>{
+      if(!d || !d.track) return;
+      clearInterval(rotTimer);
+      const txt='last played: '+d.track+' — '+d.artist+' ♪';
+      np.textContent=txt; np.style.opacity='1';
+      // too long for the box? scroll it as a seamless marquee
+      if(np.scrollWidth>280 || txt.length>34){
+        np.classList.add('marq');
+        const mq=document.createElement('span'); mq.className='mq';
+        for(let n=0;n<2;n++){ const sp=document.createElement('span'); sp.textContent=txt; mq.appendChild(sp); }
+        np.textContent=''; np.appendChild(mq);
+        mq.style.setProperty('--mqd',Math.max(10,txt.length*0.28)+'s');
+      }
+    }).catch(()=>{});
+  }
+
+  const hero=document.getElementById('top');
+  if(status && hero && 'IntersectionObserver' in window){
+    const io=new IntersectionObserver((ents)=>{
+      ents.forEach(e=>{
+        const homeShown=document.getElementById('view-home').classList.contains('show');
+        status.classList.toggle('show', homeShown && e.isIntersecting && e.intersectionRatio>0.3);
+      });
+    },{threshold:[0,0.3,0.6]});
+    io.observe(hero);
+    setTimeout(()=>{ if(window.scrollY<200) status.classList.add('show'); }, 2400);
+  } else if(status){ setTimeout(()=>status.classList.add('show'),2400); }
+})();
+
+/* ============ INTERACTIVE CONSOLE ============ */
+(function(){
+  const bar=document.getElementById('consoleBar');
+  const tab=document.getElementById('consoleTab');
+  const out=document.getElementById('consoleOut');
+  const input=document.getElementById('consoleInput');
+  let open=false;
+
+  function setOpen(v){
+    open=v; bar.classList.toggle('open',v);
+    if(v) setTimeout(()=>input.focus(),120);
+  }
+  tab.addEventListener('click',()=>setOpen(!open));
+
+  function print(html,cls){
+    const d=document.createElement('div');
+    d.className='line'+(cls?(' '+cls):'');
+    d.innerHTML=html;
+    out.appendChild(d);
+    out.scrollTop=out.scrollHeight;
+  }
+  function printCmd(cmd){ print('<span class="u">saisha@portfolio</span>:~$ '+escapeHtml(cmd)); }
+  function escapeHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+  const PAGES={news:1,publications:1,pubs:1,projects:1,experience:1,exp:1,cv:1};
+
+  const COMMANDS={
+    help(){
+      print('available commands:','muted');
+      print('  <span class="cy">about</span>        <span class="cy">news</span>           <span class="cy">publications</span>  <span class="cy">projects</span>');
+      print('  <span class="cy">experience</span>   <span class="cy">cv</span>             <span class="cy">contact</span>       <span class="cy">whoami</span>');
+      print('  <span class="cy">home</span>         <span class="cy">coffee</span>         <span class="cy">theme</span>         <span class="cy">clear</span>');
+      print('  <span class="muted">(each section opens its own page. type <span class="cy">home</span> to come back.)</span>');
+    },
+    whoami(){ print('a researcher who thinks "it works on my machine" is a bug, not a defense.'); },
+    home(){ showView('home'); print('→ home','muted'); },
+    about(){ showView('home','about'); print('→ about','muted'); },
+    news(){ showView('news'); print('opening news/ …','muted'); },
+    publications(){ showView('publications'); print('opening publications/ …','muted'); },
+    pubs(){ this.publications(); },
+    projects(){ showView('projects'); print('opening projects/ …','muted'); },
+    experience(){ showView('experience'); print('opening experience/ …','muted'); },
+    exp(){ this.experience(); },
+    cv(){ showView('cv'); print('opening cv.pdf …','muted'); window.open('Saisha_Shetty_CV.pdf','_blank'); },
+    contact(){
+      showView('home','contact');
+      print('email    <span class="cy">spshetty@ucdavis.edu</span>');
+      print('github   <span class="cy">github.com/SaishaShetty</span>');
+      print('linkedin <span class="cy">linkedin.com/in/saisha-shetty</span>');
+    },
+    coffee(){
+      print('brewing … <span class="amb">▓▓▓▓▓▓▓▓░░</span> 80%');
+      print('<span class="pk">Error:</span> coffee.exe requires a mug in $PATH. (the PhD runs on it anyway.)','muted');
+      print('');
+      print('☕ but seriously — if you\'re in <span class="amb">Davis</span> or around the <span class="amb">Bay</span>,');
+      print('   I\'d love to grab coffee and talk AI, research, grad school, or life.');
+      print('   → <span class="cy">spshetty@ucdavis.edu</span>');
+    },
+    theme(){
+      window.__toggleTheme && window.__toggleTheme();
+      print('theme → '+(document.body.classList.contains('light')?'light (white terminal)':'dark'),'muted');
+    },
+    light(){ if(!document.body.classList.contains('light')){ window.__toggleTheme(); } print('theme → light','muted'); },
+    dark(){ if(document.body.classList.contains('light')){ window.__toggleTheme(); } print('theme → dark','muted'); },
+    goto(arg){
+      if(arg && (PAGES[arg]||arg==='about'||arg==='contact'||arg==='home')){ this[arg]?this[arg]():showView(arg); }
+      else print('goto: unknown section "'+escapeHtml(arg||'')+'".','muted');
+    },
+    sudo(arg){
+      if((arg||'').indexOf('make coffee')>-1){ this.coffee(); return; }
+      print("nice try. you don't have root here — but you're welcome anyway. :)",'muted');
+    },
+    clear(){ out.innerHTML=''; },
+    echo(arg){ print(escapeHtml(arg||'')); },
+    ls(){ this.help(); }
+  };
+
+  function run(raw){
+    const line=raw.trim();
+    if(!line){ printCmd(''); return; }
+    printCmd(line);
+    const parts=line.split(/\s+/);
+    const cmd=parts[0].toLowerCase();
+    const arg=parts.slice(1).join(' ');
+    if(COMMANDS[cmd]){ try{ COMMANDS[cmd](arg);}catch(e){ print('error running '+cmd,'muted'); } }
+    else print('command not found: '+escapeHtml(cmd)+'  <span class="muted">(type <span class="cy">help</span>)</span>');
+  }
+
+  const hist=[]; let hi=-1;
+  input.addEventListener('keydown',(e)=>{
+    if(e.key==='Enter'){
+      const v=input.value; if(v.trim()){ hist.push(v); hi=hist.length; }
+      run(v); input.value='';
+    } else if(e.key==='ArrowUp'){
+      if(hi>0){ hi--; input.value=hist[hi]||''; e.preventDefault(); }
+    } else if(e.key==='ArrowDown'){
+      if(hi<hist.length-1){ hi++; input.value=hist[hi]||''; } else { hi=hist.length; input.value=''; }
+    }
+  });
+
+  document.addEventListener('keydown',(e)=>{
+    if(e.key==='Enter' && document.activeElement!==input){
+      const tag=(document.activeElement&&document.activeElement.tagName)||'';
+      if(tag!=='INPUT'&&tag!=='TEXTAREA'){ setOpen(true); e.preventDefault(); }
+    }
+    if(e.key==='Escape' && open){ setOpen(false); }
+  });
+
+  print('<span class="muted">saisha.sh — interactive. type</span> <span class="cy">help</span> <span class="muted">to begin.</span>');
+
+  const KONAMI=['ArrowUp','ArrowUp','ArrowDown','ArrowDown','ArrowLeft','ArrowRight','ArrowLeft','ArrowRight','b','a'];
+  let ki=0;
+  document.addEventListener('keydown',(e)=>{
+    const k=e.key.length===1?e.key.toLowerCase():e.key;
+    if(k===KONAMI[ki]){ ki++; if(ki===KONAMI.length){ ki=0; konami(); } }
+    else { ki=(k===KONAMI[0])?1:0; }
+  });
+  function konami(){
+    setOpen(true);
+    print('<span class="amb">✦ cheat code accepted ✦</span>');
+    print('+30 lives. −1 impostor syndrome. calibration confidence: 100% (finally).','muted');
+  }
+})();
+</script>
+</body>
+</html>
